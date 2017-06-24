@@ -42,3 +42,15 @@ script:
 
 notifications:
   email: false
+
+deploy:
+  provider: releases
+  api-key:
+    secure: "RHB8BK0C8QQd9axdtLEBm1YVDi4SKkPY+J61Yss0jlG7mR46yjjWVxR/KDVmx0D5vFVyscy8UmJIe5WIh/B6NIS/c5QPy8TYUGYqY+EDkGnA/uhaQdHoT6/tYXRThlrxMZKqfM1TrfkwjWpzep3FA+HAD52mBGsQz9U4thTAxV8q6OiayLwHKGybkbnjbc3W1TsB0jchx47ilCQ7DcScEL78QrUUZ82xQvBz5UG6WMuDn4pYVEd2dKMVKh4whuChEY63NSBMmm6nxGy5VYtWK7wL2YqmTZRFZciudN7IBpYuooR6WQTAbAJRgZcccS2XA/XLAN4nXcfprozgNGugwkg9TSImyZnUz5xm7aSzzGg2AN7U3VP6TgdAdHwS6WkL7hAGRyOT/G6wv3s5TTgKOxnZ79buBNpCDF6EHFQ8OGUQ7GVK+8rYFhffKeN9bPWyhBDZBZxyJpZTAIUBWfCVge29rNhazok7LOg0A5Rz/rxLKUKfJXdk/KpiWKXrO929U2P100pQp1DQL+SgtScrxubqiaeBj27OXq+pJKZt6Gu7ze+bKFqXEITXK4wdvhUpNM6THc0RIUwFllJY1a7oMnYCbdtC0Gdbd5VPxpisrqAUdS7vr/feF6vjS7iA7nHKQJw/BhtNL+eASBD++HePwFVMQ5SzkYAn1sDIgmmajqw="
+  file_glob: true
+  file: python-package/dist/*.whl
+  skip_cleanup: true
+  on:
+    condition: "$TASK = pip"
+    tags: true
+    all_branches: true
