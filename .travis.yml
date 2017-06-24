@@ -50,6 +50,7 @@ deploy:
   file_glob: true
   file: python-package/dist/*.whl
   skip_cleanup: true
+  draft: true
   on:
     condition: "$TASK = pip"
     tags: true

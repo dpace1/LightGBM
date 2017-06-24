@@ -55,6 +55,5 @@ deploy:
   artifact: Library,Exe,Pip
   force_update: true
   draft: true
-  prerelease: true
   on:
     appveyor_repo_tag: true
