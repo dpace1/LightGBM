@@ -228,8 +228,9 @@ def _make_n_folds(full_data, folds, nfold, params, seed, fpreproc=None, stratifi
     """
     Make an n-fold list of Booster from random indices.
     """
-    full_data = full_data.construct()
-    num_data = full_data.num_data()
+    if fpreproc is None:
+        full_data = full_data.construct()
+        num_data = full_data.num_data()
     if folds is not None:
         if not hasattr(folds, '__iter__'):
             raise AttributeError("folds should be a generator or iterator of (train_idx, test_idx)")
@@ -258,21 +259,25 @@ def _make_n_folds(full_data, folds, nfold, params, seed, fpreproc=None, stratifi
             folds = zip(train_id, test_id)
 
     ret = CVBooster()
+    cvbooster_param_list = []
     for train_idx, test_idx in folds:
         train_set = full_data.subset(train_idx)
         valid_set = full_data.subset(test_idx)
         # run preprocessing on the data set if needed
         if fpreproc is not None:
-            train_set, valid_set, tparam = fpreproc(train_set, valid_set, params.copy())
+            train_set, valid_set, tparam = fpreproc(train_set, valid_set, params.copy(), full_data)
         else:
             tparam = params
-        cvbooster = Booster(tparam, train_set)
-        cvbooster.add_valid(valid_set, 'valid')
+        cvbooster_param_list.append({'tparam': tparam, 'train_set': train_set,
+                                     'valid_set': valid_set})
+    for spec_dict in cvbooster_param_list:
+        cvbooster = Booster(spec_dict['tparam'], spec_dict['train_set'])
+        cvbooster.add_valid(spec_dict['valid_set'], 'valid')
         ret.append(cvbooster)
     return ret
 
 
-def _agg_cv_result(raw_results):
+def _agg_cv_result(raw_results, key='cv_agg'):
     """
     Aggregate cross-validation results.
     """
@@ -282,7 +287,7 @@ def _agg_cv_result(raw_results):
         for one_line in one_result:
             metric_type[one_line[1]] = one_line[3]
             cvmap[one_line[1]].append(one_line[2])
-    return [('cv_agg', k, np.mean(v), metric_type[k], np.std(v)) for k, v in cvmap.items()]
+    return [(key, k, np.mean(v), metric_type[k], np.std(v)) for k, v in cvmap.items()]
 
 
 def cv(params, train_set, num_boost_round=10,
@@ -405,10 +410,11 @@ def cv(params, train_set, num_boost_round=10,
                                     end_iteration=num_boost_round,
                                     evaluation_result_list=None))
         cvfolds.update(fobj=fobj)
-        res = _agg_cv_result(cvfolds.eval_valid(feval))
-        for _, key, mean, _, std in res:
-            results[key + '-mean'].append(mean)
-            results[key + '-stdv'].append(std)
+        res = _agg_cv_result(cvfolds.eval_train(feval), key='train_agg')
+        res += _agg_cv_result(cvfolds.eval_valid(feval))
+        for agg_type, key, mean, _, std in res:
+            results[agg_type + "-" + key + '-mean'].append(mean)
+            results[agg_type + "-" + key + '-stdv'].append(std)
         try:
             for cb in callbacks_after_iter:
                 cb(callback.CallbackEnv(model=cvfolds,
@@ -422,4 +428,5 @@ def cv(params, train_set, num_boost_round=10,
             for k in results:
                 results[k] = results[k][:cvfolds.best_iteration]
             break
+
     return dict(results)

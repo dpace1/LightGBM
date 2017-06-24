@@ -98,17 +98,27 @@ void SerialTreeLearner::Init(const Dataset* train_data, bool is_constant_hessian
 void SerialTreeLearner::ResetTrainingData(const Dataset* train_data) {
   train_data_ = train_data;
   num_data_ = train_data_->num_data();
-  CHECK(num_features_ == train_data_->num_features());
+  num_features_ = train_data_->num_features();
 
   // get ordered bin
   train_data_->CreateOrderedBins(&ordered_bins_);
 
+  has_ordered_bin_ = false;
+  // check existing for ordered bin
+  for (int i = 0; i < static_cast<int>(ordered_bins_.size()); ++i) {
+    if (ordered_bins_[i] != nullptr) {
+      has_ordered_bin_ = true;
+      break;
+    }
+  }
   // initialize splits for leaf
   smaller_leaf_splits_->ResetNumData(num_data_);
   larger_leaf_splits_->ResetNumData(num_data_);
 
   // initialize data partition
   data_partition_->ResetNumData(num_data_);
+
+  is_feature_used_.resize(num_features_);
 
   // initialize ordered gradients and hessians
   ordered_gradients_.resize(num_data_);
@@ -117,6 +127,12 @@ void SerialTreeLearner::ResetTrainingData(const Dataset* train_data) {
   if (has_ordered_bin_) {
     is_data_in_leaf_.resize(num_data_);
     std::fill(is_data_in_leaf_.begin(), is_data_in_leaf_.end(), static_cast<char>(0));
+    ordered_bin_indices_.clear();
+    for (int i = 0; i < static_cast<int>(ordered_bins_.size()); i++) {
+      if (ordered_bins_[i] != nullptr) {
+        ordered_bin_indices_.push_back(i);
+      }
+    }
   }
 }
 
@@ -189,7 +205,7 @@ Tree* SerialTreeLearner::Train(const score_t* gradients, const score_t *hessians
     const SplitInfo& best_leaf_SplitInfo = best_split_per_leaf_[best_leaf];
     // cannot split, quit
     if (best_leaf_SplitInfo.gain <= 0.0) {
-      Log::Info("No further splits with positive gain, best gain: %f", best_leaf_SplitInfo.gain);
+      // Log::Info("No further splits with positive gain, best gain: %f", best_leaf_SplitInfo.gain);
       break;
     }
     #ifdef TIMETAG
@@ -202,7 +218,7 @@ Tree* SerialTreeLearner::Train(const score_t* gradients, const score_t *hessians
     #endif
     cur_depth = std::max(cur_depth, tree->leaf_depth(left_leaf));
   }
-  Log::Info("Trained a tree with leaves=%d and max_depth=%d", tree->num_leaves(), cur_depth);
+  // Log::Info("Trained a tree with leaves=%d and max_depth=%d", tree->num_leaves(), cur_depth);
   return tree.release();
 }
 
