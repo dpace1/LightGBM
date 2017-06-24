@@ -33,11 +33,28 @@ test_script:
   - "pip install lightgbm-%LGB_VER%.tar.gz -v"
   - cd ../..
   - pytest tests/python_package_test
+  - cd python-package && python setup.py bdist_wheel --plat-name=win-amd64 --universal
 
 nuget:
   project_feed: true
+
 artifacts:
 - path: Release/lib_lightgbm.dll
   name: Library
 - path: Release/lightgbm.exe
   name: Exe
+- path: python-package/dist/*
+  name: Pip
+
+deploy:
+  release: $(APPVEYOR_REPO_TAG_NAME)
+  description: 'Stable Release for Windows'
+  provider: GitHub
+  auth_token:
+    secure: KR44XwtxY0cLlVpQwY726BvC6gzT0cYTf0ahJ4cSvvS0UVoSJxkR900ICfVXHRoT
+  artifact: Library,Exe,Pip
+  force_update: true
+  draft: true
+  prerelease: true
+  on:
+    appveyor_repo_tag: true
