@@ -43,7 +43,7 @@ if [[ ${TASK} == "pip" ]]; then
         cd $TRAVIS_BUILD_DIR/python-package && python setup.py bdist_wheel --plat-name=macosx_10_6_intel.macosx_10_9_intel.macosx_10_9_x86_64.macosx_10_10_intel.macosx_10_10_x86_64.macosx_10_11_x86_64.macosx_10_12_x86_64 --universal || exit -1
     else
         cd $TRAVIS_BUILD_DIR/python-package && python setup.py bdist_wheel --plat-name=manylinux1_x86_64 --universal || exit -1
-    if
+    fi
     exit 0
 fi
 
