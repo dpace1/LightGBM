@@ -51,6 +51,7 @@ deploy:
   file: python-package/dist/*.whl
   skip_cleanup: true
   draft: true
+  tag_name: $TRAVIS_TAG
   on:
     condition: "$TASK = pip"
     tags: true
